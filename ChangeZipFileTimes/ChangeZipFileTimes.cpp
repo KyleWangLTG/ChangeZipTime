@@ -39,6 +39,7 @@ int main()
 
 	GetZipItem(hz, -1, &ze);																//获取尾节点信息
 
+	ChangeFileTime(hz);
 
 	CloseZip(hz);																		//清除缓存
 

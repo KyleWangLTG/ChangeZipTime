@@ -2696,7 +2696,7 @@ LUFILE *lufopen(void *z, unsigned int len, DWORD flags, ZRESULT *err)
 		else
 		{
 
-			h = CreateFile((const TCHAR*)z, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			h = CreateFile((const TCHAR*)z, GENERIC_READ| GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (h == INVALID_HANDLE_VALUE) { *err = ZR_NOFILE; return NULL; }
 			mustclosehandle = true;
 		}
@@ -4322,9 +4322,60 @@ bool IsZipHandleU(HZIP hz)
 	return (han->flag == 1);
 }
 
-bool ChangeFileTime()
+int ChangeFileTime(HZIP hz)
 {
-	return true;
+	TUnzipHandleData *han = (TUnzipHandleData*)hz;
+	TUnzip *unz = han->unz;
+	unzFile uf = unz->uf;
+	if (uf == NULL)
+		return UNZ_PARAMERROR;
+
+	unzGoToFirstFile(uf);
+
+	unz_s* s = (unz_s*)uf;
+	int err = UNZ_OK;
+	uLong uMagic;
+	long innerOffsect = sizeof(short) * 4;
+	DWORD writ = 0;
+	unsigned long dosDate = 0;
+	for (unsigned long i = 0; i < uf->gi.number_entry; i++)
+	{
+		//err = unzlocal_GetCurrentFileInfoInternal(uf, &s->cur_file_info, &s->cur_file_info_internal, NULL, 0, NULL, 0, NULL, 0);
+		if (lufseek(s->file, s->pos_in_central_dir + s->byte_before_the_zipfile, SEEK_SET) != 0)
+			err = UNZ_ERRNO;
+
+		 //we check the magic
+		if (err == UNZ_OK)
+			if (unzlocal_getLong(s->file, &uMagic) != UNZ_OK)
+				err = UNZ_ERRNO;
+			else if (uMagic != 0x02014b50)
+				err = UNZ_BADZIPFILE;
+		if (lufseek(s->file, innerOffsect, SEEK_CUR) != 0)
+			err = UNZ_ERRNO;
+
+		if (err == UNZ_OK)
+		{
+			WriteFile(s->file->h, &dosDate, sizeof(dosDate), &writ, NULL);
+		}
+
+		s->current_file_ok = (err == UNZ_OK);
+
+
+		if (!s->current_file_ok)
+			return UNZ_END_OF_LIST_OF_FILE;
+		if (s->num_file + 1 == s->gi.number_entry)
+			break;
+
+
+
+		unzGoToNextFile(uf);
+
+
+
+	}
+	FlushFileBuffers(s->file->h);
+
+	return UNZ_OK;
 }
 
 
