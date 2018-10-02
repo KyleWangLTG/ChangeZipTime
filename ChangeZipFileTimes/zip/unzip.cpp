@@ -4332,34 +4332,50 @@ int ChangeFileTime(HZIP hz)
 
 	unzGoToFirstFile(uf);
 
+	const long innerDirOffsect = sizeof(short) * 4;
+	const long innerFileOffsect = sizeof(short) * 3;
 	unz_s* s = (unz_s*)uf;
 	int err = UNZ_OK;
 	uLong uMagic;
-	long innerOffsect = sizeof(short) * 4;
 	DWORD writ = 0;
 	unsigned long dosDate = 0;
+	BOOL writRet = FALSE;
 	for (unsigned long i = 0; i < uf->gi.number_entry; i++)
 	{
-		//err = unzlocal_GetCurrentFileInfoInternal(uf, &s->cur_file_info, &s->cur_file_info_internal, NULL, 0, NULL, 0, NULL, 0);
+		//change Central Directory Header Date time.
 		if (lufseek(s->file, s->pos_in_central_dir + s->byte_before_the_zipfile, SEEK_SET) != 0)
 			err = UNZ_ERRNO;
-
 		 //we check the magic
 		if (err == UNZ_OK)
 			if (unzlocal_getLong(s->file, &uMagic) != UNZ_OK)
 				err = UNZ_ERRNO;
 			else if (uMagic != 0x02014b50)
 				err = UNZ_BADZIPFILE;
-		if (lufseek(s->file, innerOffsect, SEEK_CUR) != 0)
+		if (lufseek(s->file, innerDirOffsect, SEEK_CUR) != 0)
 			err = UNZ_ERRNO;
-
 		if (err == UNZ_OK)
 		{
-			WriteFile(s->file->h, &dosDate, sizeof(dosDate), &writ, NULL);
+			writRet = WriteFile(s->file->h, &dosDate, sizeof(dosDate), &writ, NULL);
+			err = writRet == 0 ? UNZ_ERRNO : UNZ_OK;
+		}
+
+		//Change LOCAL FILE HEADER Date time
+		if (lufseek(s->file, s->cur_file_info_internal.offset_curfile + s->byte_before_the_zipfile, SEEK_SET) != 0)
+			return UNZ_ERRNO;
+		if (err == UNZ_OK)
+			if (unzlocal_getLong(s->file, &uMagic) != UNZ_OK)
+				err = UNZ_ERRNO;
+			else if (uMagic != 0x04034b50)
+				err = UNZ_BADZIPFILE;
+		if (lufseek(s->file, innerFileOffsect, SEEK_CUR) != 0)
+			err = UNZ_ERRNO;
+		if (err == UNZ_OK)
+		{
+			writRet = WriteFile(s->file->h, &dosDate, sizeof(dosDate), &writ, NULL);
+			err = writRet == 0 ? UNZ_ERRNO : UNZ_OK;
 		}
 
 		s->current_file_ok = (err == UNZ_OK);
-
 
 		if (!s->current_file_ok)
 			return UNZ_END_OF_LIST_OF_FILE;
