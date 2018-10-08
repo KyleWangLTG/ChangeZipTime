@@ -73,7 +73,7 @@ int ChangePathTime(const wchar_t *filePath, SYSTEMTIME *pst)
 
 	if (hListFile == INVALID_HANDLE_VALUE)
 	{
-		printf("Path not Found：%ws, %d\n", filePath, GetLastError());
+		printf("Path not Found: %ws, %d\n", filePath, GetLastError());
 		return ZR_NOTFOUND;
 	}
 	else
@@ -196,18 +196,21 @@ int wmain(int argc, wchar_t *args[])
 		return ZR_NOTFOUND;
 	}
 
-	if (len > 1 && strPath[len-1] == L'\\')
-	{
-		strPath = strPath.erase(len - 1, 1);
-	}
-	WIN32_FIND_DATA wfd;
 	bool isDir = false;
-	HANDLE hFind = FindFirstFile(strPath.c_str(), &wfd);
-	if ((hFind != INVALID_HANDLE_VALUE) && (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+	if (len > 1 && strPath[len-1] == L'\\')
 	{
 		isDir = true;
 	}
-	FindClose(hFind);
+	else
+	{
+		WIN32_FIND_DATA wfd;
+		HANDLE hFind = FindFirstFile(strPath.c_str(), &wfd);
+		if ((hFind != INVALID_HANDLE_VALUE) && (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			isDir = true;
+		}
+		FindClose(hFind);
+	}
 
 	SYSTEMTIME st = { 2018, 1, 0, 1, 1, 0, 0 };
 
