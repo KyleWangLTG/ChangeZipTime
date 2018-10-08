@@ -171,8 +171,12 @@ int wmain(int argc, wchar_t *args[])
 		wstring::size_type found = exeName.find_last_of(L"/\\");
 		exeName = exeName.substr(found + 1);
 		wstring hint = L"Modify jar file internal time: \n";
-		hint = hint + L"    " + exeName + L" File/Path [Date, yyyy-mm-dd] [Time, hh:mm:ss]\n";
-		hint = hint + L"        " + L"Date Default is 2018-01-01, Time Default is 01:00:00\n";
+		hint = hint + L"    " + exeName + L" File/Path [Date [Time]]\n";
+		hint = hint + L"    Parameters\n";
+		hint = hint + L"        " + L"File - Modify specified *.jar file times\n";
+		hint = hint + L"        " + L"Path - Modify all files time in the directory, including sub folders.\n";
+		hint = hint + L"        " + L"Date - Format: yyyy-mm-dd, Default Value: 2018-01-01\n";
+		hint = hint + L"        " + L"Time - Format:  hh:mm:ss, Default Value: 01:00:00\n";
 		hint = hint + L"    Example: " + exeName + L" \"D:\\Jar\\\" 2018-01-01 01:00:00 \r\n";
 		wcout << hint.c_str();
 		return 1;
@@ -234,13 +238,13 @@ int wmain(int argc, wchar_t *args[])
 	if (isDir)
 	{
 		ChangePathTime(strPath.c_str(), &st);
+		cout << "Found " << g_countALL << " *.jar file(s), " << g_countSucess << " file(s) change time successfully." << endl;
 	}
 	else
 	{
 		ChangeFileTime(strPath.c_str(), &st);
 	}
 
-	cout << "Found " << g_countALL << " *.jar file(s), " << g_countSucess << " file(s) change time successfully." << endl;
 	return 0;
 }
 
