@@ -89,7 +89,7 @@ ZRESULT SetUnzipBaseDir(HZIP hz, const TCHAR *dir);
 // if unzipping to a filename, and it's a relative filename, then it will be relative to here.
 // (defaults to current-directory).
 
-int ChangeFileTime(HZIP hz);
+int ChangeFileTime(HZIP hz, SYSTEMTIME *pst);
 
 ZRESULT CloseZip(HZIP hz);
 // CloseZip - the zip handle must be closed with this function.

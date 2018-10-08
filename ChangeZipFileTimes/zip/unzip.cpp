@@ -4322,13 +4322,39 @@ bool IsZipHandleU(HZIP hz)
 	return (han->flag == 1);
 }
 
-int ChangeFileTime(HZIP hz)
+//   Translate date/time from Dos format to tm_unz (readable more easilty)
+uLong SYSTEMTIMEToDosDate(SYSTEMTIME &st)
+{
+	uLong uDate;
+	WORD dostime;
+	WORD dosdate;
+	dosdate = (WORD)(((st.wYear - 1980) & 0x7f) << 9);
+	dosdate |= (WORD)((st.wMonth & 0xf) << 5);
+	dosdate |= (WORD)((st.wDay & 0x1f));
+	dostime = (WORD)((st.wHour & 0x1f) << 11);
+	dostime |= (WORD)((st.wMinute & 0x3f) << 5);
+	dostime |= (WORD)((st.wSecond/2) & 0x1f);
+
+	uDate = (WORD)dostime | (((DWORD)dosdate) << 16);
+	return uDate;
+}
+
+
+int ChangeFileTime(HZIP hz, SYSTEMTIME *pst)
 {
 	TUnzipHandleData *han = (TUnzipHandleData*)hz;
+	if (nullptr == han)
+		return ZR_NOFILE;
 	TUnzip *unz = han->unz;
 	unzFile uf = unz->uf;
-	if (uf == NULL)
-		return UNZ_PARAMERROR;
+	if (uf == nullptr)
+		return ZR_NOFILE;
+
+	unsigned long dosDate = 0;
+	if (nullptr != pst)
+	{
+		dosDate = SYSTEMTIMEToDosDate(*pst);
+	}
 
 	unzGoToFirstFile(uf);
 
@@ -4338,7 +4364,6 @@ int ChangeFileTime(HZIP hz)
 	int err = UNZ_OK;
 	uLong uMagic;
 	DWORD writ = 0;
-	unsigned long dosDate = 0;
 	BOOL writRet = FALSE;
 	for (unsigned long i = 0; i < uf->gi.number_entry; i++)
 	{
@@ -4361,7 +4386,7 @@ int ChangeFileTime(HZIP hz)
 
 		//Change LOCAL FILE HEADER Date time
 		if (lufseek(s->file, s->cur_file_info_internal.offset_curfile + s->byte_before_the_zipfile, SEEK_SET) != 0)
-			return UNZ_ERRNO;
+			err = UNZ_ERRNO;
 		if (err == UNZ_OK)
 			if (unzlocal_getLong(s->file, &uMagic) != UNZ_OK)
 				err = UNZ_ERRNO;
@@ -4378,20 +4403,15 @@ int ChangeFileTime(HZIP hz)
 		s->current_file_ok = (err == UNZ_OK);
 
 		if (!s->current_file_ok)
-			return UNZ_END_OF_LIST_OF_FILE;
+			return ZR_FLATE;
 		if (s->num_file + 1 == s->gi.number_entry)
 			break;
 
-
-
 		unzGoToNextFile(uf);
-
-
-
 	}
 	FlushFileBuffers(s->file->h);
 
-	return UNZ_OK;
+	return ZR_OK;
 }
 
 
