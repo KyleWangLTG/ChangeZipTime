@@ -173,7 +173,7 @@ int wmain(int argc, wchar_t *args[])
 		wstring hint = L"Modify jar file internal time: \n";
 		hint = hint + L"    " + exeName + L" File/Path [Date [Time]]\n";
 		hint = hint + L"    Parameters\n";
-		hint = hint + L"        " + L"File - Modify specified *.jar file times\n";
+		hint = hint + L"        " + L"File - Modify specified *.jar file time\n";
 		hint = hint + L"        " + L"Path - Modify all files time in the directory, including sub folders.\n";
 		hint = hint + L"        " + L"Date - Format: yyyy-mm-dd, Default Value: 2018-01-01\n";
 		hint = hint + L"        " + L"Time - Format:  hh:mm:ss, Default Value: 01:00:00\n";
